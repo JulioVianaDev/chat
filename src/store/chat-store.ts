@@ -33,6 +33,10 @@ interface ChatState {
   isAtBottom: boolean
   setIsAtBottom: (value: boolean) => void
 
+  // Incremented each time user clicks "go to recent" — ChatMessages watches this
+  // to scroll to bottom even when the query key hasn't changed
+  goToRecentCounter: number
+
   // Go to recent: resets anchor + scrollToMessageId, signals ChatMessages to reload from end
   goToRecentMessages: () => void
 }
@@ -69,11 +73,14 @@ export const useChatStore = create<ChatState>((set) => ({
   isAtBottom: true,
   setIsAtBottom: (value) => set({ isAtBottom: value }),
 
+  goToRecentCounter: 0,
+
   goToRecentMessages: () =>
-    set({
+    set((state) => ({
       anchorMessageId: null,
       scrollToMessageId: null,
       pendingMessages: [],
       hasNewerPages: false,
-    }),
+      goToRecentCounter: state.goToRecentCounter + 1,
+    })),
 }))

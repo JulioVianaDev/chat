@@ -28,6 +28,7 @@ export function ChatMessages({ conversationId, onReplyClick }: ChatMessagesProps
   const setIsAtBottom = useChatStore((s) => s.setIsAtBottom)
   const addPendingMessage = useChatStore((s) => s.addPendingMessage)
   const isAtBottom = useChatStore((s) => s.isAtBottom)
+  const goToRecentCounter = useChatStore((s) => s.goToRecentCounter)
 
   // When scrollToMessageId changes externally (search/reply), set anchor
   useEffect(() => {
@@ -164,6 +165,23 @@ export function ChatMessages({ conversationId, onReplyClick }: ChatMessagesProps
       })
     }
   }, [anchorMessageId, allMessages.length, isLoading, virtualizer])
+
+  // "Go to recent" clicked — scroll to bottom immediately.
+  // When anchor was set, the query key change + didInitialScroll reset handles it.
+  // When anchor was already null (user just scrolled up), we need to force scroll.
+  useEffect(() => {
+    if (goToRecentCounter === 0) return // skip mount
+    if (allMessages.length > 0) {
+      requestAnimationFrame(() => {
+        virtualizer.scrollToIndex(allMessages.length - 1, { align: 'end' })
+        // Also force isAtBottom so the button hides
+        setIsAtBottom(true)
+      })
+    }
+    // Reset didInitialScroll so the initial-load effect can re-fire
+    // if a refetch is also happening (anchor was set)
+    didInitialScroll.current = false
+  }, [goToRecentCounter]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Maintain scroll position when older messages prepend
   const prevScrollHeightRef = useRef(0)
